@@ -1,15 +1,11 @@
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.Document;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import javax.swing.event.*;
+import javax.swing.text.*;
+import java.awt.*;
+import java.io.*;
+import java.util.*;
 
-public class Functionalities {
+public class BottomRow {
     private final JMenu wordCountMenu = new JMenu();
     private final JMenu col_RowMenu = new JMenu();
     private final JMenu charCountMenu = new JMenu();
@@ -18,13 +14,14 @@ public class Functionalities {
     private final Document doc;
     private final GUI gui;
 
-    public Functionalities(GUI gui) {
+    public BottomRow(GUI gui, JTextPane textPane) {
         this.gui = gui;
         doc = gui.getTextPane().getDocument();
+
         col_rows();
         wordCounter();
         characterCounter();
-        //spellChecker();
+        spellChecker(textPane);
     }
 
 
@@ -111,32 +108,6 @@ public class Functionalities {
         gui.getBottomBar().add(charCountMenu);
     }
 
-    private void spellChecker(JTextPane textPane) {
-        // Reads text from the intended "dictionary" file
-        try (BufferedReader reader = new BufferedReader(new FileReader("/C:/Users/timim/OneDrive/Documents/Dictionary.txt/"))) {
-            String word;
-            // Reads each line of the file until the end and adds it to hashset "dictionary"
-            while ((word = reader.readLine()) != null) {
-                dictionary.add(word.toLowerCase());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        spellCheckButton.setText("Spell Check");
-        spellCheckButton.setFocusable(false);
-
-        spellCheckButton.addActionListener(e -> {
-            String text = textPane.getText();
-            String[] words = text.split("\\s+");
-        });
-
-
-        gui.getBottomBar().add(spellCheckButton);
-
-
-    }
-
     private void charCount() {
         // Counts the characters on the pad
         int chars = gui.getTextPane().getText().length();
@@ -144,6 +115,58 @@ public class Functionalities {
             charCountMenu.setText(chars + " Character");
         } else {
             charCountMenu.setText(chars + " Characters");
+        }
+    }
+
+    private void spellChecker(JTextPane textPane) {
+        loadDictionary(); // Loads words of the dictionary
+
+        spellCheckButton.setText("Spell Check");
+        spellCheckButton.setFocusable(false);
+        gui.getBottomBar().add(spellCheckButton);
+
+        spellCheckButton.addActionListener(e -> {
+            // Values used to check and mark an incorrectly spelled word
+            String text = textPane.getText();
+            String[] words = text.split("\\s+");
+            Highlighter highlighter = textPane.getHighlighter();
+
+            // Removes any pre-existing highlights of words
+            Highlighter.Highlight[] highlights = highlighter.getHighlights();
+            for (Highlighter.Highlight highlight : highlights) {
+                highlighter.removeHighlight(highlight);
+            }
+
+            // Loops through all words on the text pane
+            for (String word : words) {
+                String plainWord = word.replaceAll("^[^a-zA-Z]+|[^a-zA-Z]+$", "").toLowerCase(); // variable to exclude connected symbols
+
+                // If the word isn't empty and dictionary does not contain the word
+                if ((!plainWord.isEmpty()) && (!dictionary.contains(plainWord))) {
+                    int start = text.indexOf(word);
+                    int end = start + word.length();
+
+                    // Highlights incorrectly spelled word
+                    try {
+                        highlighter.addHighlight(start, end, new DefaultHighlighter.DefaultHighlightPainter(Color.red));
+                    } catch (BadLocationException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
+
+    private void loadDictionary() {
+        // Reads text from the intended "dictionary" file
+        try (BufferedReader reader = new BufferedReader(new FileReader("/C:/IdeaProjects/Notepad Clone/src/Dictionary.txt/"))) {
+            String word;
+            // Reads each line of the file until the end and adds it to hashset "dictionary"
+            while ((word = reader.readLine()) != null) {
+                dictionary.add(word.toLowerCase());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

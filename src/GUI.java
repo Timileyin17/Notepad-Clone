@@ -25,7 +25,7 @@ public class GUI implements ActionListener {
         // Adds shortcuts
         textPane.addKeyListener(new Shortcuts(main, this));
 
-        new Functionalities(this);
+        new BottomRow(this, textPane);
         file();
         edit();
         format();
